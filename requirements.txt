@@ -6,3 +6,4 @@ scikit-plot
 matplotlib
 seaborn
 joblib
+plotly
