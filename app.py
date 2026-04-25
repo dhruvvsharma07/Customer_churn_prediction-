@@ -5,14 +5,14 @@ import joblib
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, roc_curve, auc
 
-# ── Page config ──────────────────────────────────────────
+# ── PAGE CONFIG ─────────────────────────────
 st.set_page_config(
-    page_title="Customer Churn Predictor",
-    page_icon="🔄",
+    page_title="Customer Churn Dashboard",
+    page_icon="📊",
     layout="wide"
 )
 
-# ── Load model ───────────────────────────────────────────
+# ── LOAD MODEL ─────────────────────────────
 @st.cache_resource
 def load_model():
     artifact = joblib.load("model.pkl")
@@ -26,33 +26,32 @@ def load_model():
 
 model, encoders, feature_names, X_test, y_test = load_model()
 
-# ── Load dataset ─────────────────────────────────────────
+# ── LOAD DATA ─────────────────────────────
 @st.cache_data
 def load_data():
-    return pd.read_csv("customer_churn.csv")
+    df = pd.read_csv("customer_churn.csv")
+    return df
 
 df = load_data()
 
-# ── Header ───────────────────────────────────────────────
-st.title("🔄 Customer Churn Predictor")
-st.caption("Random Forest ML Model · Gen AI Project")
+# 🔥 Fix column naming once
+if "Churn" not in df.columns:
+    df.rename(columns={"Target": "Churn"}, inplace=True)
 
-st.divider()
-
-# ── Sidebar — user inputs ────────────────────────────────
+# ── SIDEBAR ───────────────────────────────
 with st.sidebar:
-    st.header("📋 Customer Details")
+    st.title("📋 Customer Input")
 
     age = st.slider("Age", 18, 70, 34)
     frequent_flyer = st.selectbox("Frequent Flyer?", ["No", "Yes"])
-    income_class = st.selectbox("Annual Income Class", ["Low Income", "Middle Income", "High Income"])
+    income_class = st.selectbox("Income Class", ["Low Income", "Middle Income", "High Income"])
     services_opted = st.slider("Services Opted", 1, 8, 4)
     social_media = st.selectbox("Social Media Sync?", ["No", "Yes"])
     booked_hotel = st.selectbox("Booked Hotel?", ["No", "Yes"])
 
-    predict_btn = st.button("🔍 Predict Churn")
+    predict_btn = st.button("🔮 Predict", use_container_width=True)
 
-# ── Prepare input ────────────────────────────────────────
+# ── INPUT PREP ────────────────────────────
 def prepare_input():
     row = {
         "Age": age,
@@ -64,107 +63,103 @@ def prepare_input():
     }
     return pd.DataFrame([row])[feature_names]
 
-# ── Tabs Layout ──────────────────────────────────────────
-tab1, tab2, tab3 = st.tabs(["🔮 Prediction", "📊 Data Insights", "📈 Model Performance"])
+# ── HEADER ────────────────────────────────
+st.title("📊 Customer Churn Analytics Dashboard")
+st.caption("End-to-End ML Project · Random Forest · Streamlit")
 
-# =========================================================
-# 🔮 TAB 1 — PREDICTION
-# =========================================================
-with tab1:
+st.divider()
 
-    if predict_btn:
-        input_df = prepare_input()
-        prediction = model.predict(input_df)[0]
-        probability = model.predict_proba(input_df)[0]
+# ── TOP METRICS ───────────────────────────
+col1, col2, col3 = st.columns(3)
 
-        churn_prob = probability[1] * 100
-        retain_prob = probability[0] * 100
+col1.metric("Total Customers", len(df))
+col2.metric("Churn Rate", f"{df['Churn'].mean()*100:.1f}%")
+col3.metric("Model Type", "Random Forest")
 
+st.divider()
+
+# ── PREDICTION SECTION ────────────────────
+st.subheader("🔮 Prediction")
+
+if predict_btn:
+    input_df = prepare_input()
+    prediction = model.predict(input_df)[0]
+    prob = model.predict_proba(input_df)[0]
+
+    churn_prob = prob[1] * 100
+    retain_prob = prob[0] * 100
+
+    colA, colB = st.columns([1,1])
+
+    with colA:
         if prediction == 1:
-            st.error("⚠️ HIGH CHURN RISK")
+            st.error(f"⚠️ High Churn Risk ({churn_prob:.1f}%)")
         else:
-            st.success("✅ LOW CHURN RISK")
+            st.success(f"✅ Low Churn Risk ({retain_prob:.1f}%)")
 
-        st.metric("Churn Probability", f"{churn_prob:.2f}%")
-        st.metric("Retain Probability", f"{retain_prob:.2f}%")
-
-        # Probability chart
-        fig, ax = plt.subplots()
+    with colB:
+        fig, ax = plt.subplots(figsize=(4,2))
         ax.barh(["Retained", "Churned"], [retain_prob, churn_prob])
-        ax.set_title("Prediction Confidence")
+        ax.set_xlim(0,100)
         st.pyplot(fig)
 
-    else:
-        st.info("Enter details and click Predict")
+st.divider()
 
-    # Feature importance
-    st.subheader("📊 Feature Importance")
+# ── FEATURE IMPORTANCE ─────────────────────
+st.subheader("📊 Feature Importance")
 
-    importances = model.feature_importances_
-    feat_df = pd.DataFrame({
-        "Feature": feature_names,
-        "Importance": importances
-    }).sort_values("Importance")
+importances = model.feature_importances_
+feat_df = pd.DataFrame({
+    "Feature": feature_names,
+    "Importance": importances
+}).sort_values("Importance")
 
-    fig, ax = plt.subplots()
-    ax.barh(feat_df["Feature"], feat_df["Importance"])
-    ax.set_title("Feature Importance")
-    st.pyplot(fig)
+fig, ax = plt.subplots(figsize=(6,3))
+ax.barh(feat_df["Feature"], feat_df["Importance"])
+st.pyplot(fig)
 
+# ── EDA SECTION ───────────────────────────
+st.subheader("📈 Data Insights")
 
-# =========================================================
-# 📊 TAB 2 — DATA INSIGHTS (EDA)
-# =========================================================
-with tab2:
+col1, col2 = st.columns(2)
 
-    st.subheader("Churn Distribution")
-
-    fig, ax = plt.subplots()
+with col1:
+    fig, ax = plt.subplots(figsize=(4,3))
     df['Churn'].value_counts().plot(kind='bar', ax=ax)
     ax.set_title("Churn Distribution")
     st.pyplot(fig)
 
-    st.subheader("Age Distribution")
-
-    fig, ax = plt.subplots()
-    df['Age'].hist(ax=ax, bins=20)
-    ax.set_title("Age Distribution")
-    st.pyplot(fig)
-
-    st.subheader("Services Opted vs Churn")
-
-    fig, ax = plt.subplots()
+with col2:
+    fig, ax = plt.subplots(figsize=(4,3))
     df.groupby("ServicesOpted")["Churn"].mean().plot(ax=ax)
-    ax.set_title("Churn Rate vs Services")
+    ax.set_title("Churn vs Services")
     st.pyplot(fig)
 
+# ── MODEL PERFORMANCE ─────────────────────
+st.subheader("📉 Model Performance")
 
-# =========================================================
-# 📈 TAB 3 — MODEL PERFORMANCE
-# =========================================================
-with tab3:
+col1, col2 = st.columns(2)
 
-    st.subheader("Confusion Matrix")
-
+# Confusion Matrix
+with col1:
     y_pred = model.predict(X_test)
     cm = confusion_matrix(y_test, y_pred)
 
-    fig, ax = plt.subplots()
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+    fig, ax = plt.subplots(figsize=(4,3))
+    disp = ConfusionMatrixDisplay(cm)
     disp.plot(ax=ax)
     st.pyplot(fig)
 
-    st.subheader("ROC Curve")
-
-    y_prob = model.predict_proba(X_test)[:, 1]
+# ROC Curve
+with col2:
+    y_prob = model.predict_proba(X_test)[:,1]
     fpr, tpr, _ = roc_curve(y_test, y_prob)
     roc_auc = auc(fpr, tpr)
 
-    fig, ax = plt.subplots()
-    ax.plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}")
-    ax.plot([0, 1], [0, 1], '--')
-    ax.set_title("ROC Curve")
+    fig, ax = plt.subplots(figsize=(4,3))
+    ax.plot(fpr, tpr, label=f"AUC={roc_auc:.2f}")
+    ax.plot([0,1],[0,1],'--')
     ax.legend()
     st.pyplot(fig)
 
-    st.metric("AUC Score", f"{roc_auc:.3f}")
+st.success("✅ App fully loaded with analytics + prediction")
