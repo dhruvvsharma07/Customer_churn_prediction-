@@ -177,14 +177,51 @@ if predict_btn:
         y_pred = model.predict(X_test)
         y_prob = model.predict_proba(X_test)[:,1]
 
-        # ROC
-        fpr, tpr, _ = roc_curve(y_test, y_prob)
-        roc_auc = auc(fpr, tpr)
+        col1, col2 = st.columns(2)
 
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=fpr, y=tpr, name=f"AUC = {roc_auc:.2f}"))
-        fig.add_trace(go.Scatter(x=[0,1], y=[0,1], line=dict(dash='dash')))
-        st.plotly_chart(fig, use_container_width=True)
+        # ---------------- CONFUSION MATRIX ----------------
+        with col1:
+            cm = confusion_matrix(y_test, y_pred)
+
+            fig_cm = go.Figure(data=go.Heatmap(
+                z=cm,
+                x=["Retained", "Churned"],
+                y=["Retained", "Churned"],
+                colorscale="Blues",
+                text=cm,
+                texttemplate="%{text}"
+            ))
+
+            fig_cm.update_layout(
+                title="Confusion Matrix",
+                xaxis_title="Predicted",
+                yaxis_title="Actual"
+            )
+
+            st.plotly_chart(fig_cm, use_container_width=True)
+
+        # ---------------- ROC CURVE ----------------
+        with col2:
+            fpr, tpr, _ = roc_curve(y_test, y_prob)
+            roc_auc = auc(fpr, tpr)
+
+            fig_roc = go.Figure()
+            fig_roc.add_trace(go.Scatter(
+                x=fpr, y=tpr,
+                mode='lines',
+                name=f"AUC = {roc_auc:.2f}"
+            ))
+
+            fig_roc.add_trace(go.Scatter(
+                x=[0,1], y=[0,1],
+                mode='lines',
+                line=dict(dash='dash'),
+                name="Random"
+            ))
+
+            fig_roc.update_layout(title="ROC Curve")
+
+            st.plotly_chart(fig_roc, use_container_width=True)
 
     # -------- FEATURES --------
     with tab3:
