@@ -81,51 +81,6 @@ Customer_Churn_Prediction/
 - Checked for multicollinearity between features
 - No extreme correlations found — all 6 features retained
 
-### 5. Train-Test Split
-```python
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
-# 763 training samples | 191 testing samples
-# stratify=y ensures equal churn ratio in both sets
-```
-
-### 6. Model — Random Forest Classifier
-```python
-rf_model = RandomForestClassifier(
-    n_estimators=100,     # 100 decision trees
-    max_depth=10,         # prevents overfitting
-    min_samples_split=5,
-    min_samples_leaf=2,
-    random_state=42,
-    n_jobs=-1             # all CPU cores
-)
-```
-
-**Why Random Forest over others?**
-
-| Model | Why NOT chosen |
-|---|---|
-| Logistic Regression | Assumes linear relationships — churn is non-linear |
-| Single Decision Tree | Highly prone to overfitting |
-| SVM | Doesn't handle mixed data types well; no feature importance |
-| Neural Network | Needs much more data; black box — no explainability |
-| XGBoost | Strong alternative — planned for future comparison |
-
-### 7. Model Persistence
-```python
-artifact = {
-    'model': rf_model,
-    'encoders': encoders,        # saved for inference consistency
-    'features': list(X.columns),
-    'X_test': X_test,
-    'y_test': y_test
-}
-joblib.dump(artifact, 'model.pkl')
-```
-
----
-
 ## 📈 Model Performance
 
 | Metric | Score |
@@ -151,36 +106,6 @@ joblib.dump(artifact, 'model.pkl')
 
 ---
 
-## 🚀 Deployment
-
-**Platform:** Streamlit Community Cloud
-**Flow:** Train in Jupyter → `joblib.dump()` → push to GitHub → auto-deploy on Streamlit Cloud
-
-```
-Notebook → model.pkl → GitHub → Streamlit Cloud → Live App
-```
-
----
-
-## 🛠️ Run Locally
-
-```bash
-# 1. Clone the repo
-git clone https://github.com/dhruvvsharma07/Customer_churn_prediction-
-cd Customer_churn_prediction-
-
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Run notebook (for training)
-jupyter notebook Customer_Churn_Prediction.ipynb
-
-# 4. Run Streamlit app
-streamlit run app.py
-```
-
----
-
 ## 📦 Requirements
 
 ```
@@ -195,23 +120,5 @@ streamlit
 
 ---
 
-## 🔮 Future Improvements
 
-- [ ] **GridSearchCV** — systematic hyperparameter tuning
-- [ ] **K-Fold Cross Validation** — more reliable accuracy estimation
-- [ ] **XGBoost / LightGBM** — compare gradient boosting vs bagging
-- [ ] **SMOTE** — handle class imbalance synthetically
-- [ ] **SHAP Values** — instance-level explainability
-
----
-
-## 👨‍💻 Author
-
-**Dhruv Sharma**
-B.Tech Gen AI | Roll No: KU2507U0372
-IBM Project — 2nd Semester
-
----
-
-## 📄 License
 MIT License — free to use with attribution.
