@@ -1,5 +1,4 @@
 # ✈️ Customer Churn Prediction — Airline Industry
-### End-to-End Machine Learning Project | B.Tech Gen AI (2nd Semester)
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://customer-churn-predictor372.streamlit.app/)
 ![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python)
